@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { query } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
-  const db = getDb();
   const { searchParams } = request.nextUrl;
 
   const genre = searchParams.get("genre");
@@ -37,6 +36,6 @@ export async function GET(request: NextRequest) {
   };
   sql += ` ORDER BY ${sortMap[sort] ?? "finished_at DESC"}`;
 
-  const result = await db.execute({ sql, args });
+  const result = await query(sql, args);
   return NextResponse.json({ books: result.rows });
 }

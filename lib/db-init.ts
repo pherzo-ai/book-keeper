@@ -1,9 +1,7 @@
-import { getDb } from "./db";
+import { execute } from "./db";
 
 export async function initDb() {
-  const db = getDb();
-
-  await db.execute(`
+  await execute(`
     CREATE TABLE IF NOT EXISTS to_read (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -15,7 +13,7 @@ export async function initDb() {
     )
   `);
 
-  await db.execute(`
+  await execute(`
     CREATE TABLE IF NOT EXISTS shelf (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,

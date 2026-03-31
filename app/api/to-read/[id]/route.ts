@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { query, execute } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export async function DELETE(
@@ -7,8 +7,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const db = getDb();
-  await db.execute({ sql: "DELETE FROM to_read WHERE id = ?", args: [id] });
+  await execute("DELETE FROM to_read WHERE id = ?", [id]);
   return NextResponse.json({ success: true });
 }
 
@@ -18,14 +17,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const db = getDb();
   const body = await request.json();
 
   // Get book from to_read
-  const result = await db.execute({
-    sql: "SELECT * FROM to_read WHERE id = ?",
-    args: [id],
-  });
+  const result = await query("SELECT * FROM to_read WHERE id = ?", [id]);
 
   if (!result.rows.length) {
     return NextResponse.json({ error: "Book not found" }, { status: 404 });
@@ -44,30 +39,25 @@ export async function PUT(
   const shelfId = uuidv4();
   const isRated = !skip && rating !== null ? 1 : 0;
 
-  await db.batch([
-    {
-      sql: `INSERT INTO shelf (id, title, author, cover_url, open_library_id, google_books_id, rating, thoughts, genre, format, tags, is_rated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        shelfId,
-        book.title,
-        book.author,
-        book.cover_url,
-        book.open_library_id,
-        book.google_books_id,
-        isRated ? rating : null,
-        isRated && thoughts ? thoughts : null,
-        genre ?? null,
-        format ?? null,
-        tags ?? null,
-        isRated,
-      ],
-    },
-    {
-      sql: "DELETE FROM to_read WHERE id = ?",
-      args: [id],
-    },
-  ]);
+  await execute(
+    `INSERT INTO shelf (id, title, author, cover_url, open_library_id, google_books_id, rating, thoughts, genre, format, tags, is_rated)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      shelfId,
+      book.title as string,
+      book.author as string,
+      book.cover_url as string | null,
+      book.open_library_id as string | null,
+      book.google_books_id as string | null,
+      isRated ? rating : null,
+      isRated && thoughts ? thoughts : null,
+      genre ?? null,
+      format ?? null,
+      tags ?? null,
+      isRated,
+    ]
+  );
+  await execute("DELETE FROM to_read WHERE id = ?", [id]);
 
   return NextResponse.json({ shelfId });
 }
