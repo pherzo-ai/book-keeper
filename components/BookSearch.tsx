@@ -112,13 +112,21 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
   async function handleAdd(book: BookResult) {
     const key = book.open_library_id ?? book.google_books_id ?? book.title;
     setAdding(key);
-    const res = await fetch("/api/to-read", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(book),
-    });
-    setAdding(null);
-    if (res.ok) onAdded();
+    try {
+      const res = await fetch("/api/to-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(book),
+      });
+      if (res.ok) {
+        onAdded();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(`Failed to add book: ${data.error ?? res.status}`);
+      }
+    } finally {
+      setAdding(null);
+    }
   }
 
   return (
