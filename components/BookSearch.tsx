@@ -15,6 +15,34 @@ interface BookSearchProps {
   onAdded: () => void;
 }
 
+// Called directly from the browser — no Cloudflare Workers in the path
+async function searchOpenLibrary(query: string): Promise<BookResult[]> {
+  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=key,title,author_name,cover_i`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Open Library failed");
+  const data = await res.json();
+  if (!data.docs?.length) return [];
+  return data.docs.map((doc: Record<string, unknown>) => ({
+    title: doc.title as string,
+    author: Array.isArray(doc.author_name)
+      ? (doc.author_name[0] as string)
+      : "Unknown Author",
+    cover_url: doc.cover_i
+      ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+      : null,
+    open_library_id: doc.key as string | null,
+    google_books_id: null,
+  }));
+}
+
+// Falls back to server route which holds the Google Books API key
+async function searchGoogleBooksFallback(query: string): Promise<BookResult[]> {
+  const res = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.results ?? [];
+}
+
 export function BookSearch({ onClose, onAdded }: BookSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookResult[]>([]);
@@ -36,12 +64,23 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
 
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
-      const res = await fetch(
-        `/api/books/search?q=${encodeURIComponent(query)}`
-      );
-      const data = await res.json();
-      setResults(data.results ?? []);
-      setSearching(false);
+      try {
+        const olResults = await searchOpenLibrary(query);
+        if (olResults.length > 0) {
+          setResults(olResults);
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      try {
+        const gbResults = await searchGoogleBooksFallback(query);
+        setResults(gbResults);
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
     }, 400);
   }, [query]);
 
@@ -95,11 +134,13 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
         )}
         <ul className="divide-y divide-border">
           {results.map((book, i) => {
-            const key = book.open_library_id ?? book.google_books_id ?? `${book.title}-${i}`;
+            const key =
+              book.open_library_id ??
+              book.google_books_id ??
+              `${book.title}-${i}`;
             const isAdding = adding === key;
             return (
               <li key={key} className="flex items-center gap-3 px-4 py-3">
-                {/* Cover */}
                 <div
                   className="flex-shrink-0 w-10 rounded overflow-hidden bg-muted"
                   style={{ height: "60px" }}
@@ -117,8 +158,6 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
                     </div>
                   )}
                 </div>
-
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium leading-snug line-clamp-2">
                     {book.title}
@@ -127,8 +166,6 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
                     {book.author}
                   </p>
                 </div>
-
-                {/* Add button */}
                 <button
                   onClick={() => handleAdd(book)}
                   disabled={isAdding}
