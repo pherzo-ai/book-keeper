@@ -16,9 +16,12 @@ interface BookSearchProps {
 }
 
 // Called directly from the browser — no Cloudflare Workers in the path
-async function searchOpenLibrary(query: string): Promise<BookResult[]> {
-  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=key,title,author_name,cover_i`;
-  const res = await fetch(url);
+async function searchOpenLibrary(
+  query: string,
+  signal: AbortSignal
+): Promise<BookResult[]> {
+  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=key,title,author_name,cover_i`;
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error("Open Library failed");
   const data = await res.json();
   if (!data.docs?.length) return [];
@@ -36,8 +39,13 @@ async function searchOpenLibrary(query: string): Promise<BookResult[]> {
 }
 
 // Falls back to server route which holds the Google Books API key
-async function searchGoogleBooksFallback(query: string): Promise<BookResult[]> {
-  const res = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`);
+async function searchGoogleBooksFallback(
+  query: string,
+  signal: AbortSignal
+): Promise<BookResult[]> {
+  const res = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`, {
+    signal,
+  });
   if (!res.ok) return [];
   const data = await res.json();
   return data.results ?? [];
@@ -50,6 +58,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
   const [adding, setAdding] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -57,31 +66,41 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
+
     if (!query.trim()) {
       setResults([]);
+      setSearching(false);
       return;
     }
 
+    setSearching(true);
     debounceRef.current = setTimeout(async () => {
-      setSearching(true);
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       try {
-        const olResults = await searchOpenLibrary(query);
+        const olResults = await searchOpenLibrary(query, controller.signal);
         if (olResults.length > 0) {
           setResults(olResults);
+          setSearching(false);
           return;
         }
-      } catch {
-        // fall through
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
       }
       try {
-        const gbResults = await searchGoogleBooksFallback(query);
+        const gbResults = await searchGoogleBooksFallback(
+          query,
+          controller.signal
+        );
         setResults(gbResults);
-      } catch {
-        setResults([]);
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") setResults([]);
       } finally {
-        setSearching(false);
+        if (!controller.signal.aborted) setSearching(false);
       }
-    }, 400);
+    }, 200);
   }, [query]);
 
   async function handleAdd(book: BookResult) {
