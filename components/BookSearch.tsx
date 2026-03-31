@@ -122,8 +122,9 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
       if (res.ok) {
         onAdded();
       } else {
-        const data = await res.json().catch(() => ({}));
-        alert(`Failed to add book: ${data.error ?? res.status}`);
+        const text = await res.text().catch(() => "");
+        const msg = (() => { try { return JSON.parse(text).error; } catch { return text; } })();
+        alert(`Failed to add book (${res.status}): ${msg || "(no message)"}`);
       }
     } finally {
       setAdding(null);

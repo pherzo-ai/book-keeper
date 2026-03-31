@@ -17,6 +17,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+    return NextResponse.json(
+      { error: "Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN env vars" },
+      { status: 500 }
+    );
+  }
   try {
     await initDb();
     const db = getDb();
