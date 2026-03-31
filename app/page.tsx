@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import { FinishBookModal } from "@/components/FinishBookModal";
 import { BookSearch } from "@/components/BookSearch";
 
@@ -39,31 +38,18 @@ export default function HomePage() {
     setBooks((prev) => prev.filter((b) => b.id !== bookId));
   }
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login";
-  }
-
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold">Reading List</h1>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/shelf"
-              className="text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-accent transition-colors"
-            >
-              Shelf
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-accent transition-colors"
-            >
-              Logout
-            </button>
-          </div>
+          <a
+            href="/shelf"
+            className="text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-accent transition-colors"
+          >
+            Shelf
+          </a>
         </div>
       </header>
 

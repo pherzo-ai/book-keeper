@@ -10,7 +10,7 @@ export interface BookResult {
 
 async function searchOpenLibrary(query: string): Promise<BookResult[]> {
   const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=key,title,author_name,cover_i`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
   if (!res.ok) throw new Error("Open Library failed");
 
   const data = await res.json();
@@ -32,7 +32,7 @@ async function searchOpenLibrary(query: string): Promise<BookResult[]> {
 async function searchGoogleBooks(query: string): Promise<BookResult[]> {
   const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
   const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${apiKey}`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error("Google Books failed");
 
   const data = await res.json();
