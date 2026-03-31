@@ -8,11 +8,18 @@ export interface BookResult {
   google_books_id: string | null;
 }
 
+function fetchWithTimeout(url: string, ms: number): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { signal: controller.signal }).finally(() =>
+    clearTimeout(id)
+  );
+}
+
 async function searchOpenLibrary(query: string): Promise<BookResult[]> {
   const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=key,title,author_name,cover_i`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+  const res = await fetchWithTimeout(url, 4000);
   if (!res.ok) throw new Error("Open Library failed");
-
   const data = await res.json();
   if (!data.docs?.length) return [];
 
@@ -32,9 +39,8 @@ async function searchOpenLibrary(query: string): Promise<BookResult[]> {
 async function searchGoogleBooks(query: string): Promise<BookResult[]> {
   const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
   const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${apiKey}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  const res = await fetchWithTimeout(url, 8000);
   if (!res.ok) throw new Error("Google Books failed");
-
   const data = await res.json();
   if (!data.items?.length) return [];
 
@@ -59,19 +65,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  try {
-    const results = await searchOpenLibrary(query);
-    if (results.length > 0) {
-      return NextResponse.json({ results });
-    }
-  } catch {
-    // fall through to Google Books
+  // Run both in parallel — return whichever succeeds first with results
+  const [olResult, gbResult] = await Promise.allSettled([
+    searchOpenLibrary(query),
+    searchGoogleBooks(query),
+  ]);
+
+  if (olResult.status === "fulfilled" && olResult.value.length > 0) {
+    return NextResponse.json({ results: olResult.value });
+  }
+  if (gbResult.status === "fulfilled" && gbResult.value.length > 0) {
+    return NextResponse.json({ results: gbResult.value });
   }
 
-  try {
-    const results = await searchGoogleBooks(query);
-    return NextResponse.json({ results });
-  } catch {
-    return NextResponse.json({ results: [] });
-  }
+  return NextResponse.json({ results: [] });
 }
