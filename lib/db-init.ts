@@ -3,7 +3,7 @@ import { getDb } from "./db";
 export async function initDb() {
   const db = getDb();
 
-  await db.executeMultiple(`
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS to_read (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -12,8 +12,10 @@ export async function initDb() {
       open_library_id TEXT,
       google_books_id TEXT,
       added_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
+  `);
 
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS shelf (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -28,6 +30,6 @@ export async function initDb() {
       genre TEXT,
       tags TEXT,
       is_rated INTEGER DEFAULT 0
-    );
+    )
   `);
 }
