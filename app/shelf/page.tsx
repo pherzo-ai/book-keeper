@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api";
 import { FinishBookModal } from "@/components/FinishBookModal";
 import { BookDetailModal } from "@/components/BookDetailModal";
 
@@ -51,7 +52,7 @@ export default function ShelfPage() {
     if (year) params.set("year", year);
     if (unrated) params.set("unrated", "true");
 
-    const res = await fetch(`/api/shelf?${params}`);
+    const res = await fetch(apiUrl(`/api/shelf?${params}`));
     const data = await res.json();
     setBooks(data.books ?? []);
     setLoading(false);

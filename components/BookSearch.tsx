@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { apiUrl } from "@/lib/api";
 
 const GOOGLE_BOOKS_API_KEY = "AIzaSyDMfZJQMo8cEZPsoALKGD9hTlkuJE1CYRg";
 
@@ -113,7 +114,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
     const key = book.open_library_id ?? book.google_books_id ?? book.title;
     setAdding(key);
     try {
-      const res = await fetch("/api/to-read", {
+      const res = await fetch(apiUrl("/api/to-read"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(book),

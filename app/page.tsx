@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { FinishBookModal } from "@/components/FinishBookModal";
 import { BookSearch } from "@/components/BookSearch";
+import { apiUrl } from "@/lib/api";
 
 interface Book {
   id: string;
@@ -20,7 +21,7 @@ export default function HomePage() {
   const [showSearch, setShowSearch] = useState(false);
 
   const fetchBooks = useCallback(async () => {
-    const res = await fetch("/api/to-read");
+    const res = await fetch(apiUrl("/api/to-read"));
     const data = await res.json();
     setBooks(data.books ?? []);
     setLoading(false);
@@ -31,7 +32,7 @@ export default function HomePage() {
   }, [fetchBooks]);
 
   async function handleRemove(id: string) {
-    await fetch(`/api/to-read/${id}`, { method: "DELETE" });
+    await fetch(apiUrl(`/api/to-read/${id}`), { method: "DELETE" });
     setBooks((prev) => prev.filter((b) => b.id !== id));
   }
 

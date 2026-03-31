@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiUrl } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -74,7 +75,7 @@ export function FinishBookModal({
     try {
       if (mode === "rate") {
         // PATCH shelf book
-        await fetch(`/api/shelf/${book.id}`, {
+        await fetch(apiUrl(`/api/shelf/${book.id}`), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -87,7 +88,7 @@ export function FinishBookModal({
         });
       } else {
         // PUT to-read book (move to shelf)
-        await fetch(`/api/to-read/${book.id}`, {
+        await fetch(apiUrl(`/api/to-read/${book.id}`), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
