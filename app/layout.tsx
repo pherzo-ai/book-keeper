@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "My Reading List",
   description: "Personal novel reading tracker",
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
