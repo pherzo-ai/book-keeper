@@ -4,9 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "My Reading List",
   description: "Personal novel reading tracker",
-  icons: {
-    apple: "/apple-touch-icon.png",
-  },
 };
 
 export const viewport: Viewport = {
@@ -22,6 +19,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
+      <head>
+        <link rel="apple-touch-icon" href="/books/apple-touch-icon.png" />
+      </head>
       <body className="min-h-full bg-background text-foreground antialiased">
         {children}
       </body>
