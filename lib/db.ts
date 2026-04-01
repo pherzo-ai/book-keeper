@@ -2,7 +2,15 @@ type SqlValue = string | number | null;
 export type Row = Record<string, SqlValue>;
 
 function tursoUrl() {
-  return process.env.TURSO_DATABASE_URL!.replace(/^libsql:\/\//, "https://");
+  const url = process.env.TURSO_DATABASE_URL;
+  if (!url) throw new Error("TURSO_DATABASE_URL env var is not set");
+  return url.replace(/^libsql:\/\//, "https://");
+}
+
+function tursoToken() {
+  const token = process.env.TURSO_AUTH_TOKEN;
+  if (!token) throw new Error("TURSO_AUTH_TOKEN env var is not set");
+  return token;
 }
 
 function encode(v: SqlValue) {
@@ -38,7 +46,7 @@ export async function query(
   const res = await fetch(`${tursoUrl()}/v2/pipeline`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.TURSO_AUTH_TOKEN}`,
+      Authorization: `Bearer ${tursoToken()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
