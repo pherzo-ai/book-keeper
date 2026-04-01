@@ -22,12 +22,14 @@ interface BookDetailModalProps {
 }
 
 export function BookDetailModal({ book, onClose, onRate, onEdit }: BookDetailModalProps) {
-  const finishedDate = book.finished_at
-    ? new Date(book.finished_at).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-      })
-    : null;
+  let finishedDate: string | null = null;
+  if (book.finished_at) {
+    const parts = book.finished_at.split("-");
+    if (parts.length >= 2) {
+      const month = new Date(2000, parseInt(parts[1], 10) - 1).toLocaleString("en-US", { month: "long" });
+      finishedDate = `${month} ${parts[0]}`;
+    }
+  }
 
   const tags = book.tags
     ? book.tags.split(",").map((t) => t.trim()).filter(Boolean)

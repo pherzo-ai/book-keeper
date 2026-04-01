@@ -99,7 +99,15 @@ export default function ShelfPage() {
 
   function openEdit(book: ShelfBook) {
     setDetailBook(null);
-    const d = book.finished_at ? new Date(book.finished_at) : new Date();
+    let finishedMonth = String(new Date().getMonth() + 1);
+    let finishedYear = String(new Date().getFullYear());
+    if (book.finished_at) {
+      const parts = book.finished_at.split("-");
+      if (parts.length >= 2) {
+        finishedYear = parts[0];
+        finishedMonth = String(parseInt(parts[1], 10));
+      }
+    }
     setEditBook(book);
     setEditInitial({
       rating: book.rating,
@@ -107,8 +115,8 @@ export default function ShelfPage() {
       genre: book.genre,
       format: book.format,
       tags: book.tags,
-      finishedMonth: String(d.getMonth() + 1),
-      finishedYear: String(d.getFullYear()),
+      finishedMonth,
+      finishedYear,
     });
   }
 
