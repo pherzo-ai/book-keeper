@@ -132,7 +132,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-x-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <button
           onClick={onClose}
@@ -143,7 +143,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
         </button>
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by title or author..."
