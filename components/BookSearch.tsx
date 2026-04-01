@@ -132,7 +132,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-x-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <button
           onClick={onClose}
@@ -173,7 +173,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
               `${book.title}-${i}`;
             const isAdding = adding === key;
             return (
-              <li key={key} className="flex items-center gap-3 px-4 py-3">
+              <li key={key} className="flex items-center gap-3 px-4 py-3 overflow-hidden">
                 <div
                   className="flex-shrink-0 w-10 rounded overflow-hidden bg-muted"
                   style={{ height: "60px" }}
@@ -195,7 +195,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
                   <p className="text-sm font-medium leading-snug line-clamp-2">
                     {book.title}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     {book.author}
                   </p>
                 </div>
