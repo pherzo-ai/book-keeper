@@ -7,11 +7,11 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const { rating, thoughts, genre, format, tags } = body;
+  const { rating, thoughts, genre, format, tags, finished_at } = body;
 
   await execute(
-    `UPDATE shelf SET rating = ?, thoughts = ?, genre = ?, format = ?, tags = ?, is_rated = 1 WHERE id = ?`,
-    [rating ?? null, thoughts ?? null, genre ?? null, format ?? null, tags ?? null, id]
+    `UPDATE shelf SET rating = ?, thoughts = ?, genre = ?, format = ?, tags = ?, is_rated = 1, finished_at = COALESCE(?, finished_at) WHERE id = ?`,
+    [rating ?? null, thoughts ?? null, genre ?? null, format ?? null, tags ?? null, finished_at ?? null, id]
   );
 
   return NextResponse.json({ success: true });

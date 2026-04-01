@@ -39,9 +39,20 @@ export default function ShelfPage() {
   const [genre, setGenre] = useState("");
   const [format, setFormat] = useState("");
   const [year, setYear] = useState("");
+  const [tag, setTag] = useState("");
   const [unrated, setUnrated] = useState(false);
   const [sort, setSort] = useState("finished_at");
   const [rateBook, setRateBook] = useState<ShelfBook | null>(null);
+  const [editBook, setEditBook] = useState<ShelfBook | null>(null);
+  const [editInitial, setEditInitial] = useState<{
+    rating?: number | null;
+    thoughts?: string | null;
+    genre?: string | null;
+    format?: string | null;
+    tags?: string | null;
+    finishedMonth?: string;
+    finishedYear?: string;
+  } | undefined>(undefined);
   const [detailBook, setDetailBook] = useState<ShelfBook | null>(null);
 
   const fetchBooks = useCallback(async () => {
@@ -50,13 +61,14 @@ export default function ShelfPage() {
     if (genre) params.set("genre", genre);
     if (format) params.set("format", format);
     if (year) params.set("year", year);
+    if (tag) params.set("tag", tag);
     if (unrated) params.set("unrated", "true");
 
     const res = await fetch(apiUrl(`/api/shelf?${params}`));
     const data = await res.json();
     setBooks(data.books ?? []);
     setLoading(false);
-  }, [genre, format, year, unrated, sort]);
+  }, [genre, format, year, tag, unrated, sort]);
 
   useEffect(() => {
     fetchBooks();
@@ -67,9 +79,37 @@ export default function ShelfPage() {
     new Set(books.map((b) => new Date(b.finished_at).getFullYear().toString()))
   ).sort((a, b) => Number(b) - Number(a));
 
+  // Get all unique tags from books for filter
+  const allTags = Array.from(
+    new Set(
+      books
+        .flatMap((b) => (b.tags ? b.tags.split(",").map((t) => t.trim()).filter(Boolean) : []))
+    )
+  ).sort();
+
   function handleRated(bookId: string) {
     fetchBooks();
     setRateBook(null);
+  }
+
+  function handleEdited(bookId: string) {
+    fetchBooks();
+    setEditBook(null);
+  }
+
+  function openEdit(book: ShelfBook) {
+    setDetailBook(null);
+    const d = book.finished_at ? new Date(book.finished_at) : new Date();
+    setEditBook(book);
+    setEditInitial({
+      rating: book.rating,
+      thoughts: book.thoughts,
+      genre: book.genre,
+      format: book.format,
+      tags: book.tags,
+      finishedMonth: String(d.getMonth() + 1),
+      finishedYear: String(d.getFullYear()),
+    });
   }
 
   return (
@@ -150,6 +190,22 @@ export default function ShelfPage() {
               ))}
             </select>
 
+            {/* Tag filter */}
+            {allTags.length > 0 && (
+              <select
+                value={tag}
+                onChange={(e) => setTag(e.target.value)}
+                className="h-8 px-2 rounded-lg border border-input bg-background text-xs"
+              >
+                <option value="">All tags</option>
+                {allTags.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            )}
+
             {/* Unrated toggle */}
             <button
               onClick={() => setUnrated((v) => !v)}
@@ -175,7 +231,7 @@ export default function ShelfPage() {
             <div className="text-4xl mb-3">📚</div>
             <p className="font-medium">No books here yet</p>
             <p className="text-sm mt-1">
-              {genre || format || year || unrated
+              {genre || format || year || tag || unrated
                 ? "Try clearing some filters"
                 : "Finish a book to add it to your shelf"}
             </p>
@@ -246,6 +302,16 @@ export default function ShelfPage() {
         mode="rate"
       />
 
+      {/* Edit modal */}
+      <FinishBookModal
+        book={editBook}
+        open={!!editBook}
+        onClose={() => setEditBook(null)}
+        onSaved={handleEdited}
+        mode="edit"
+        initialValues={editInitial}
+      />
+
       {/* Detail modal */}
       {detailBook && (
         <BookDetailModal
@@ -255,6 +321,7 @@ export default function ShelfPage() {
             setDetailBook(null);
             setRateBook(book);
           }}
+          onEdit={openEdit}
         />
       )}
     </div>

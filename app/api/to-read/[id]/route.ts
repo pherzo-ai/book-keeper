@@ -33,6 +33,7 @@ export async function PUT(
     genre = null,
     format = null,
     tags = null,
+    finished_at = null,
     skip = false,
   } = body;
 
@@ -40,8 +41,8 @@ export async function PUT(
   const isRated = !skip && rating !== null ? 1 : 0;
 
   await execute(
-    `INSERT INTO shelf (id, title, author, cover_url, open_library_id, google_books_id, rating, thoughts, genre, format, tags, is_rated)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO shelf (id, title, author, cover_url, open_library_id, google_books_id, rating, thoughts, genre, format, tags, is_rated, finished_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))`,
     [
       shelfId,
       book.title as string,
@@ -55,6 +56,7 @@ export async function PUT(
       format ?? null,
       tags ?? null,
       isRated,
+      finished_at,
     ]
   );
   await execute("DELETE FROM to_read WHERE id = ?", [id]);

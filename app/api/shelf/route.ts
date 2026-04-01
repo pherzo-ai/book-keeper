@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   const format = searchParams.get("format");
   const year = searchParams.get("year");
   const unrated = searchParams.get("unrated");
+  const tag = searchParams.get("tag");
   const sort = searchParams.get("sort") ?? "finished_at";
 
   let sql = "SELECT * FROM shelf WHERE 1=1";
@@ -27,6 +28,10 @@ export async function GET(request: NextRequest) {
   }
   if (unrated === "true") {
     sql += " AND is_rated = 0";
+  }
+  if (tag) {
+    sql += " AND (',' || tags || ',') LIKE ?";
+    args.push(`%,${tag},%`);
   }
 
   const sortMap: Record<string, string> = {

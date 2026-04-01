@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiUrl } from "@/lib/api";
 import {
   Dialog,
@@ -35,12 +35,31 @@ const FORMATS = [
   "Graphic Novel",
 ];
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: 15 }, (_, i) => String(CURRENT_YEAR - i));
+
+interface InitialValues {
+  rating?: number | null;
+  thoughts?: string | null;
+  genre?: string | null;
+  format?: string | null;
+  tags?: string | null;
+  finishedMonth?: string;
+  finishedYear?: string;
+}
+
 interface FinishBookModalProps {
   book: { id: string; title: string; author: string } | null;
   open: boolean;
   onClose: () => void;
   onSaved: (bookId: string) => void;
-  mode?: "finish" | "rate"; // rate = coming from shelf unrated badge
+  mode?: "finish" | "rate" | "edit";
+  initialValues?: InitialValues;
 }
 
 export function FinishBookModal({
@@ -49,6 +68,7 @@ export function FinishBookModal({
   onClose,
   onSaved,
   mode = "finish",
+  initialValues,
 }: FinishBookModalProps) {
   const [rating, setRating] = useState<number | null>(null);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
@@ -56,7 +76,30 @@ export function FinishBookModal({
   const [genre, setGenre] = useState("");
   const [format, setFormat] = useState("");
   const [tags, setTags] = useState("");
+  const [finishedMonth, setFinishedMonth] = useState(String(new Date().getMonth() + 1));
+  const [finishedYear, setFinishedYear] = useState(String(CURRENT_YEAR));
   const [saving, setSaving] = useState(false);
+
+  // Re-populate fields when modal opens (edit mode)
+  useEffect(() => {
+    if (open && initialValues) {
+      setRating(initialValues.rating ?? null);
+      setThoughts(initialValues.thoughts ?? "");
+      setGenre(initialValues.genre ?? "");
+      setFormat(initialValues.format ?? "");
+      setTags(initialValues.tags ?? "");
+      setFinishedMonth(initialValues.finishedMonth ?? String(new Date().getMonth() + 1));
+      setFinishedYear(initialValues.finishedYear ?? String(CURRENT_YEAR));
+    } else if (open && !initialValues) {
+      setRating(null);
+      setThoughts("");
+      setGenre("");
+      setFormat("");
+      setTags("");
+      setFinishedMonth(String(new Date().getMonth() + 1));
+      setFinishedYear(String(CURRENT_YEAR));
+    }
+  }, [open, initialValues]);
 
   function handleClose() {
     setRating(null);
@@ -68,12 +111,17 @@ export function FinishBookModal({
     onClose();
   }
 
+  function buildFinishedAt() {
+    const m = finishedMonth.padStart(2, "0");
+    return `${finishedYear}-${m}-01`;
+  }
+
   async function handleSave(skip = false) {
     if (!book) return;
     setSaving(true);
 
     try {
-      if (mode === "rate") {
+      if (mode === "rate" || mode === "edit") {
         // PATCH shelf book
         await fetch(apiUrl(`/api/shelf/${book.id}`), {
           method: "PATCH",
@@ -84,6 +132,7 @@ export function FinishBookModal({
             genre: genre || null,
             format: format || null,
             tags: tags || null,
+            finished_at: buildFinishedAt(),
           }),
         });
       } else {
@@ -97,6 +146,7 @@ export function FinishBookModal({
             genre: genre || null,
             format: format || null,
             tags: tags || null,
+            finished_at: buildFinishedAt(),
             skip,
           }),
         });
@@ -116,7 +166,7 @@ export function FinishBookModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {mode === "rate" ? "Rate this book" : "Finished reading?"}
+            {mode === "edit" ? "Edit review" : mode === "rate" ? "Rate this book" : "Finished reading?"}
           </DialogTitle>
           {book && (
             <p className="text-sm text-muted-foreground">
@@ -225,6 +275,37 @@ export function FinishBookModal({
             />
           </div>
 
+          {/* Date Finished */}
+          <div>
+            <label className="text-sm font-medium block mb-1">Date finished</label>
+            <div className="flex gap-2">
+              <Select value={finishedMonth} onValueChange={setFinishedMonth}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((name, i) => (
+                    <SelectItem key={i + 1} value={String(i + 1)}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={finishedYear} onValueChange={setFinishedYear}>
+                <SelectTrigger className="w-28">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {YEARS.map((y) => (
+                    <SelectItem key={y} value={y}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Actions */}
           <div className="flex flex-col gap-2 pt-1">
             <Button
@@ -232,15 +313,17 @@ export function FinishBookModal({
               disabled={saving}
               className="w-full h-12 text-base"
             >
-              {saving ? "Saving..." : "Save to Shelf"}
+              {saving ? "Saving..." : mode === "edit" ? "Save changes" : "Save to Shelf"}
             </Button>
-            <button
-              onClick={() => handleSave(true)}
-              className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 py-1"
-              disabled={saving}
-            >
-              Skip — add later
-            </button>
+            {mode !== "edit" && (
+              <button
+                onClick={() => handleSave(true)}
+                className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 py-1"
+                disabled={saving}
+              >
+                Skip — add later
+              </button>
+            )}
           </div>
         </div>
       </DialogContent>

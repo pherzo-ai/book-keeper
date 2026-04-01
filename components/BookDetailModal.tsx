@@ -18,14 +18,16 @@ interface BookDetailModalProps {
   book: ShelfBook;
   onClose: () => void;
   onRate: (book: ShelfBook) => void;
+  onEdit: (book: ShelfBook) => void;
 }
 
-export function BookDetailModal({ book, onClose, onRate }: BookDetailModalProps) {
-  const finishedDate = new Date(book.finished_at).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+export function BookDetailModal({ book, onClose, onRate, onEdit }: BookDetailModalProps) {
+  const finishedDate = book.finished_at
+    ? new Date(book.finished_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      })
+    : null;
 
   const tags = book.tags
     ? book.tags.split(",").map((t) => t.trim()).filter(Boolean)
@@ -47,13 +49,21 @@ export function BookDetailModal({ book, onClose, onRate }: BookDetailModalProps)
         {/* Drag handle */}
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-muted sm:hidden" />
 
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground text-xl"
-        >
-          ✕
-        </button>
+        {/* Close + Edit buttons */}
+        <div className="absolute right-4 top-4 flex items-center gap-2">
+          <button
+            onClick={() => onEdit(book)}
+            className="text-xs text-muted-foreground hover:text-foreground border border-input rounded-md px-2.5 py-1"
+          >
+            Edit
+          </button>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground text-xl"
+          >
+            ✕
+          </button>
+        </div>
 
         <div className="flex gap-4">
           {/* Cover */}
@@ -76,7 +86,7 @@ export function BookDetailModal({ book, onClose, onRate }: BookDetailModalProps)
           </div>
 
           {/* Info */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pr-16">
             <h2 className="font-semibold text-base leading-snug">{book.title}</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{book.author}</p>
 
@@ -144,9 +154,11 @@ export function BookDetailModal({ book, onClose, onRate }: BookDetailModalProps)
         )}
 
         {/* Finished date */}
-        <p className="text-xs text-muted-foreground mt-4">
-          Finished {finishedDate}
-        </p>
+        {finishedDate && (
+          <p className="text-xs text-muted-foreground mt-4">
+            Finished {finishedDate}
+          </p>
+        )}
       </div>
     </div>
   );
