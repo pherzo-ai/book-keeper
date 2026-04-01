@@ -154,7 +154,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {!query.trim() && (
           <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
             Start typing to search
@@ -165,7 +165,7 @@ export function BookSearch({ onClose, onAdded }: BookSearchProps) {
             No results found
           </div>
         )}
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border w-full">
           {results.map((book, i) => {
             const key =
               book.open_library_id ??
